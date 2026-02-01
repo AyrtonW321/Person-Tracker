@@ -12,8 +12,7 @@ PanTiltController = None
 if config.USE_SERVO:
     try:
         from servo.controller import PanTiltController
-    except Exception as e:
-        print("[WARN] Servo controller failed to import:", e)
+    except Exception:
         PanTiltController = None
 
 
@@ -21,100 +20,51 @@ def main():
     camera = Camera()
     dist_est = DistanceEstimator()
 
+    # Tracker is selected ONCE from config
+    tracker = make_tracker(getattr(config, "TRACK_MODE", "colour"))
+
     controller = None
     if config.USE_SERVO and PanTiltController is not None:
         try:
             controller = PanTiltController()
-        except Exception as e:
-            print("[WARN] Servo controller failed to start:", e)
+        except Exception:
             controller = None
-
-    tracker = None
-
-    # Distance measurement toggle (OFF by default)
-    distance_enabled = False
 
     try:
         while True:
             frame = camera.read()
 
-            result = {
-                "found": False,
-                "bbox": None,
-                "center": None,
-                "raw_center": None,
-                "error": None,
-                "area": 0,
-                "mask": None,
-                "distance_cm": None,
-                "label": "idle",
-                "weight": 0.0,
-            }
+            # Always get a dict result from the tracker
+            result = tracker.process(frame)
 
-            # Only process tracking if a tracker is active
-            if tracker is not None:
-                result = tracker.process(frame)
+            # Distance from bbox width (always, when found)
+            result["distance_cm"] = None
+            bbox = result.get("bbox")
+            if result.get("found") and isinstance(bbox, (tuple, list)) and len(bbox) == 4:
+                w = int(bbox[2])
+                result["distance_cm"] = dist_est.estimate_cm(w)
 
-                # Distance from bbox width ONLY if enabled
-                if distance_enabled and result.get("found") and result.get("bbox") is not None:
-                    bbox = result["bbox"]
-                    if isinstance(bbox, (tuple, list)) and len(bbox) == 4:
-                        w = int(bbox[2])
-                        result["distance_cm"] = dist_est.estimate_cm(w)
+            # Servo control
+            if controller is not None and result.get("found") and result.get("error"):
+                error_x, error_y = result["error"]
+                controller.update(error_x, error_y)
 
-                # Servo control
-                if controller is not None and result.get("found") and result.get("error"):
-                    error_x, error_y = result["error"]
-                    controller.update(error_x, error_y)
-
-            # Draw overlays
+            # Draw overlays + display
             draw_crosshair(frame)
             draw_tracking_overlay(frame, result)
 
-            # Display
             cv.imshow("Video", frame)
             if result.get("mask") is not None:
                 cv.imshow("Mask", result["mask"])
 
-            # Keyboard input
+            # Keys: calibrate + quit only
             key = cv.waitKey(1) & 0xFF
 
-            # ----- MODE CONTROL -----
-            if key == ord("0"):
-                tracker = None
-                print("[MODE] Idle (no tracking)")
+            if key == ord("c"):
+                if result.get("found") and isinstance(bbox, (tuple, list)) and len(bbox) == 4:
+                    w = int(bbox[2])
+                    dist_est.calibrate(w)
 
-            elif key == ord("1"):
-                tracker = make_tracker("colour")
-                print("[MODE] Colour tracking")
-
-            elif key == ord("2"):
-                tracker = make_tracker("person")
-                print("[MODE] Person tracking")
-
-            elif key == ord("3"):
-                tracker = make_tracker("face")
-                print("[MODE] Face tracking")
-
-            # Toggle distance measurement
-            elif key == ord("d"):
-                distance_enabled = not distance_enabled
-                print(f"[DIST] {'ON' if distance_enabled else 'OFF'}")
-
-            # Calibration
-            elif key == ord("c"):
-                if result.get("found") and result.get("bbox") is not None:
-                    _, _, w, _ = result["bbox"]
-                    focal = dist_est.calibrate(int(w))
-                    if focal is not None:
-                        print(f"[CALIB] FOCAL_LENGTH_PX = {focal:.2f}")
-                        print("[CALIB] Put that value into config.py to persist it.")
-                    else:
-                        print("[CALIB] Invalid bbox width.")
-                else:
-                    print("[CALIB] No target detected; can't calibrate.")
-
-            # Quit
             elif key == ord("q"):
                 break
 

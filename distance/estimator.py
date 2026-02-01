@@ -3,7 +3,6 @@ Docstring for distance.estimator
 estimates the distnace away from the camera
 '''
 
-# vision/distance_estimator.py
 import config
 
 class DistanceEstimator:

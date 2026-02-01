@@ -22,6 +22,7 @@ DEADBAND_PX = 0  # The error from the crosshair to the centre of the object
 
 # Servo usage
 USE_SERVO = False
+TRACK_MODE = "face" # "person" | "colour" | "face"
 
 # Servo pins
 PAN_PIN = 18
