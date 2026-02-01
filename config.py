@@ -5,9 +5,12 @@ PREVIEW_SIZE = (1280, 960)
 
 COLOR_RANGES = {
     "cb132b_red": [
-        (np.array([173, 170,  60], dtype=np.uint8),
-         np.array([179, 255, 255], dtype=np.uint8)),
+        (np.array([0, 120, 60], dtype=np.uint8),
+        np.array([10, 255, 255], dtype=np.uint8)),
+        (np.array([170, 120, 60], dtype=np.uint8),
+        np.array([179, 255, 255], dtype=np.uint8)),
     ],
+
 }
 ACTIVE_COLORS = ["cb132b_red"]
 
@@ -44,7 +47,7 @@ SERVO_KP_PAN = 0.6   # us per pixel
 SERVO_KP_TILT = 0.6  # us per pixel
 
 # Cap how much to change per update (microseconds)
-SERVO_MAX_STEP_US = 12
+SERVO_MAX_STEP_US = 8
 
 # Flip direction if needed
 PAN_INVERT = False
@@ -57,5 +60,3 @@ CLOSE_ITERS = 1
 CENTER_SMOOTH_ALPHA = 0.12
 
 ERROR_SMOOTH_ALPHA = 0.12
-LOCK_TIME_S = 0.2
-HOLD_TIME_S = 0.5
