@@ -5,8 +5,6 @@ PREVIEW_SIZE = (1280, 960)
 
 COLOR_RANGES = {
     "cb132b_red": [
-        (np.array([0, 120, 60], dtype=np.uint8),
-        np.array([10, 255, 255], dtype=np.uint8)),
         (np.array([170, 120, 60], dtype=np.uint8),
         np.array([179, 255, 255], dtype=np.uint8)),
     ],
