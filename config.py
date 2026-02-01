@@ -11,7 +11,7 @@ which tracking to track for (humans, colour, object)
 import numpy as np
 
 # Camera
-PREVIEW_SIZE = (900, 450)
+PREVIEW_SIZE = (1280, 960)
 
 # Red HSV thresholds (two ranges because red wraps hue)
 LOWER_RED1 = np.array([0, 120, 70], dtype=np.uint8)
