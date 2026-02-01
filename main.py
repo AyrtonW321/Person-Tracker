@@ -1,10 +1,3 @@
-
-''' 
-Stars camera
-Run loop
-handles quitting and cleanup
-''' 
-
 import cv2 as cv
 
 from vision.camera import Camera
@@ -32,7 +25,6 @@ def main():
     finally:
         camera.close()
         cv.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()

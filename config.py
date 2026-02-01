@@ -11,7 +11,7 @@ which tracking to track for (humans, colour, object)
 import numpy as np
 
 # Camera
-PREVIEW_SIZE = (640, 480)
+PREVIEW_SIZE = (1280, 960)
 
 # Red HSV thresholds (two ranges because red wraps hue)
 LOWER_RED1 = np.array([0, 120, 70], dtype=np.uint8)
@@ -28,7 +28,7 @@ USE_SERVO = False  # flip True when ready
 
 # Servo pins (BCM)
 PAN_PIN = 18
-TILT_PIN = None  # set to a BCM pin if you have tilt
+TILT_PIN = 13
 
 # Servo PWM + movement
 SERVO_FREQ = 50
