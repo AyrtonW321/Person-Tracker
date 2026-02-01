@@ -22,8 +22,8 @@ COLOR_RANGES = {
 ACTIVE_COLORS = ["cb132b_red"]
 
 # Detection tuning
-MIN_AREA = 2000
-DEADBAND_PX = 25
+MIN_AREA = 1000
+DEADBAND_PX = 100
 
 # Servo usage
 USE_SERVO = True
@@ -37,8 +37,8 @@ SERVO_FREQ = 50
 PAN_CENTER = 7.2
 TILT_CENTER = 7.2
 
-PAN_MIN, PAN_MAX = 5.0, 9.5
-TILT_MIN, TILT_MAX = 5.0, 9.5
+PAN_MIN, PAN_MAX = 5.0, 10
+TILT_MIN, TILT_MAX = 5.0, 10
 
 # Servo timing: how often to apply a servo update
 SERVO_UPDATE_S = 3.0
@@ -53,11 +53,11 @@ PAN_INVERT = False
 TILT_INVERT = True
 
 # Vision smoothing / cleanup
-MASK_KERNEL = (5, 5)
+MASK_KERNEL = (10, 10)
 OPEN_ITERS = 1
 CLOSE_ITERS = 1
 CENTER_SMOOTH_ALPHA = 0.12
 
 ERROR_SMOOTH_ALPHA = 0.12
-LOCK_TIME_S = 1.0
+LOCK_TIME_S = 0.2
 HOLD_TIME_S = 2.0
