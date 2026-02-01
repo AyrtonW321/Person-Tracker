@@ -12,6 +12,7 @@ if config.USE_SERVO:
     except Exception:
         PanTiltController = None
 
+
 def main():
     camera = Camera()
     tracker = ColourTracker()
@@ -22,25 +23,29 @@ def main():
 
     try:
         while True:
-            frame = camera.read()  # BGR
-            result, mask = tracker.process(frame)
+            frame = camera.read()          # BGR frame
+            result = tracker.process(frame)  # dict result
+            mask = result["mask"]
 
             draw_crosshair(frame)
             draw_tracking_overlay(frame, result)
 
-            if controller is not None and result is not None:
-                controller.update(result["error_x"], result["error_y"])
+            if controller is not None and result["found"]:
+                error_x, error_y = result["error"]
+                controller.update(error_x, error_y)
 
             cv.imshow("Video", frame)
             cv.imshow("Mask", mask)
 
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
+
     finally:
         camera.close()
         if controller is not None:
             controller.close()
         cv.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
