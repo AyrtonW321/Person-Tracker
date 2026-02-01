@@ -13,12 +13,6 @@ import numpy as np
 # Camera
 PREVIEW_SIZE = (1280, 960)
 
-# Red HSV thresholds (two ranges because red wraps hue)
-# LOWER_RED1 = np.array([0, 120, 70], dtype=np.uint8)
-# UPPER_RED1 = np.array([10, 255, 255], dtype=np.uint8)
-# LOWER_RED2 = np.array([170, 120, 70], dtype=np.uint8)
-# UPPER_RED2 = np.array([180, 255, 255], dtype=np.uint8)
-
 COLOR_RANGES = {
     # Target red: hex #CB132B (tight range)
     # Approx HSV(OpenCV): H~176, S~231, V~203
@@ -59,3 +53,22 @@ TILT_MIN, TILT_MAX = 5.0, 9.5
 
 SERVO_STEP = 0.015
 SERVO_UPDATE_S = 0.2
+
+# Servo control tuning
+SERVO_KP_PAN = 0.0008
+SERVO_KP_TILT = 0.0008
+
+SERVO_MAX_STEP = 0.06  # cap per update to prevent crazy jumps
+# SERVO_UPDATE_S already in your config (0.03) is good
+
+
+# Vision smoothing / cleanup
+MASK_KERNEL = (5, 5)     # try (3,3) if you want tighter, (7,7) if noisy
+OPEN_ITERS = 1
+CLOSE_ITERS = 1
+
+CENTER_SMOOTH_ALPHA = 0.25
+# 0.15 = very smooth but slower
+# 0.25 = balanced
+# 0.40 = faster but more jitter
+

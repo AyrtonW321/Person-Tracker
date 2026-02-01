@@ -5,61 +5,61 @@ import config
 
 class ColourTracker:
     def __init__(self, active_colors=None):
-        """
-        active_colors: list of color keys from config.COLOR_RANGES
-                       Example: ["cb132b_red"] or ["cb132b_red", "blue"]
-                       If None, uses config.ACTIVE_COLORS
-        """
         self.active_colors = active_colors or config.ACTIVE_COLORS
-
-        self.color_ranges = config.COLOR_RANGES  # dict: color_name -> list[(lower, upper)]
-
+        self.color_ranges = config.COLOR_RANGES
         self.min_area = config.MIN_AREA
         self.deadband_px = config.DEADBAND_PX
 
+        self.kernel = cv.getStructuringElement(
+            cv.MORPH_ELLIPSE,
+            config.MASK_KERNEL
+        )
+
+        self.alpha = config.CENTER_SMOOTH_ALPHA
+        self._smoothed_center = None  # (sx, sy)
+
     def _build_mask(self, hsv):
-        """
-        Builds a combined mask for all active colors.
-        Each color may contain multiple HSV ranges.
-        """
         mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
-
         for color_name in self.active_colors:
-            ranges = self.color_ranges.get(color_name, [])
-            for lower, upper in ranges:
+            for lower, upper in self.color_ranges.get(color_name, []):
                 mask = cv.bitwise_or(mask, cv.inRange(hsv, lower, upper))
-
         return mask
+
+    def _smooth_center(self, cx, cy):
+        if self._smoothed_center is None:
+            self._smoothed_center = (float(cx), float(cy))
+        else:
+            sx, sy = self._smoothed_center
+            sx = (1 - self.alpha) * sx + self.alpha * cx
+            sy = (1 - self.alpha) * sy + self.alpha * cy
+            self._smoothed_center = (sx, sy)
+        return int(self._smoothed_center[0]), int(self._smoothed_center[1])
 
     def process(self, frame_bgr):
         H, W = frame_bgr.shape[:2]
 
-        # Optional: blur to reduce speckle noise (helps twitching)
         frame_bgr = cv.GaussianBlur(frame_bgr, (5, 5), 0)
-
         hsv = cv.cvtColor(frame_bgr, cv.COLOR_BGR2HSV)
 
-        # Build mask from config-selected color(s)
         mask = self._build_mask(hsv)
 
-        # Clean noise (same as your old code)
-        mask = cv.erode(mask, None, iterations=1)
-        mask = cv.dilate(mask, None, iterations=2)
+        # Better cleanup than erode/dilate alone
+        mask = cv.morphologyEx(mask, cv.MORPH_OPEN, self.kernel, iterations=config.OPEN_ITERS)
+        mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, self.kernel, iterations=config.CLOSE_ITERS)
 
-        # Find contours
         contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-        # Default result if nothing found
         result = {
             "found": False,
-            "bbox": None,        # (x, y, w, h)
-            "center": None,      # (cx, cy)
-            "error": None,       # (error_x, error_y)
+            "bbox": None,
+            "center": None,
+            "error": None,
             "area": 0,
             "mask": mask,
         }
 
         if not contours:
+            self._smoothed_center = None
             return result
 
         c = max(contours, key=cv.contourArea)
@@ -67,16 +67,19 @@ class ColourTracker:
         result["area"] = int(area)
 
         if area < self.min_area:
+            self._smoothed_center = None
             return result
 
         x, y, w, h = cv.boundingRect(c)
         cx = x + w // 2
         cy = y + h // 2
 
+        # Smooth the center to reduce jitter
+        cx, cy = self._smooth_center(cx, cy)
+
         error_x = cx - (W // 2)
         error_y = cy - (H // 2)
 
-        # Deadband to reduce servo jitter later
         if abs(error_x) < self.deadband_px:
             error_x = 0
         if abs(error_y) < self.deadband_px:
@@ -88,5 +91,4 @@ class ColourTracker:
             "center": (cx, cy),
             "error": (error_x, error_y),
         })
-
         return result
