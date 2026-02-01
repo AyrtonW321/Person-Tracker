@@ -52,9 +52,9 @@ class PanTiltController:
 
         scale = 1.0
         if mag < 200:
-            scale = 0.6
+            scale = 0.8
         if mag < 120:
-            scale = 0.35
+            scale = 0.45
         if mag < 60:
             scale = 0.18
 
