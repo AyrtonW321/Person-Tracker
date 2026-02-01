@@ -50,7 +50,7 @@ SERVO_MAX_STEP = 0.04
 
 # If your servos move the wrong way, flip these booleans
 PAN_INVERT = False
-TILT_INVERT = False
+TILT_INVERT = True
 
 # Vision smoothing / cleanup
 MASK_KERNEL = (5, 5)
