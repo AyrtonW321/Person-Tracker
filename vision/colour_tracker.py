@@ -2,7 +2,6 @@ import cv2 as cv
 import numpy as np
 import config
 
-
 class ColourTracker:
     def __init__(self, active_colors=None):
         self.active_colors = active_colors or config.ACTIVE_COLORS
@@ -43,7 +42,6 @@ class ColourTracker:
 
         mask = self._build_mask(hsv)
 
-        # Better cleanup than erode/dilate alone
         mask = cv.morphologyEx(mask, cv.MORPH_OPEN, self.kernel, iterations=config.OPEN_ITERS)
         mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, self.kernel, iterations=config.CLOSE_ITERS)
 
@@ -74,7 +72,6 @@ class ColourTracker:
         cx = x + w // 2
         cy = y + h // 2
 
-        # Smooth the center to reduce jitter
         cx, cy = self._smooth_center(cx, cy)
 
         error_x = cx - (W // 2)

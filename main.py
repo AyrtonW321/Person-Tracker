@@ -23,8 +23,8 @@ def main():
 
     try:
         while True:
-            frame = camera.read()          # BGR frame
-            result = tracker.process(frame)  # dict result
+            frame = camera.read()
+            result = tracker.process(frame)
             mask = result["mask"]
 
             draw_crosshair(frame)

@@ -1,11 +1,3 @@
-'''
-Docstring for ui.overlay
-bounding box
-center dot/ crosshair
-distance text
-angles
-FPS?
-'''
 import cv2 as cv
 
 
@@ -22,15 +14,11 @@ def draw_crosshair(frame_bgr, size=20, thickness=2):
 
 
 def draw_tracking_overlay(frame_bgr, result):
-    """
-    Draws bbox + center dot if result["found"] is True.
-    """
     if not result.get("found", False):
         return
 
     bbox = result.get("bbox")
     center = result.get("center")
-
     if bbox is None or center is None:
         return
 

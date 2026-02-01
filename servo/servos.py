@@ -4,18 +4,28 @@ angle limits
 '''
 import config
 
-try: 
+try:
     import RPi.GPIO as GPIO
 except ImportError:
     GPIO = None
 
+
 def clamp(v, vmin, vmax):
     return max(vmin, min(vmax, v))
+
+
+_GPIO_MODE_SET = False
+
 
 class Servo:
     def __init__(self, pin, min_dc, max_dc, center_dc, freq=None):
         if GPIO is None:
             raise RuntimeError("RPi.GPIO not available (run on Raspberry Pi).")
+
+        global _GPIO_MODE_SET
+        if not _GPIO_MODE_SET:
+            GPIO.setmode(GPIO.BCM)
+            _GPIO_MODE_SET = True
 
         self.pin = pin
         self.freq = config.SERVO_FREQ if freq is None else freq
@@ -24,8 +34,6 @@ class Servo:
         self.max_dc = max_dc
         self.dc = center_dc
 
-        # GPIO mode should be set once; safe to call multiple times
-        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.pin, GPIO.OUT)
 
         self.pwm = GPIO.PWM(self.pin, self.freq)
