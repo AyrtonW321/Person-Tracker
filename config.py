@@ -1,12 +1,3 @@
-'''
-camera res
-servo pins
-angles/limits
-tracking
-distance calibration
-which tracking to track for (humans, colour, object)
-'''
-
 import numpy as np
 
 # Camera
@@ -18,7 +9,6 @@ COLOR_RANGES = {
          np.array([179, 255, 255], dtype=np.uint8)),
     ],
 }
-
 ACTIVE_COLORS = ["cb132b_red"]
 
 # Detection tuning
@@ -32,23 +22,31 @@ USE_SERVO = True
 PAN_PIN = 18
 TILT_PIN = 13
 
-# Servo PWM + movement
-SERVO_FREQ = 50
-PAN_CENTER = 7.2
-TILT_CENTER = 7.2
+# ----------------------------
+# pigpio servo settings (µs)
+# ----------------------------
+# Typical usable range is ~500–2500us, center ~1500us.
+# You MUST tune these for your mount so you don't hit hard stops.
+PAN_US_MIN = 600
+PAN_US_MAX = 2400
+PAN_US_CENTER = 1500
 
-PAN_MIN, PAN_MAX = 5.0, 10
-TILT_MIN, TILT_MAX = 5.0, 10
+TILT_US_MIN = 600
+TILT_US_MAX = 2400
+TILT_US_CENTER = 1500
 
-# Servo timing: how often to apply a servo update
-SERVO_UPDATE_S = 3.0
+# How often to apply a servo update (seconds)
+SERVO_UPDATE_S = 0.03
 
-# Servo control tuning (proportional)
-SERVO_KP_PAN = 0.0006
-SERVO_KP_TILT = 0.0006
-SERVO_MAX_STEP = 0.001
+# Proportional tuning: converts pixel error -> microseconds change
+# Bigger KP => more movement for the same error.
+SERVO_KP_PAN = 0.6   # us per pixel
+SERVO_KP_TILT = 0.6  # us per pixel
 
-# If your servos move the wrong way, flip these booleans
+# Cap how much to change per update (microseconds)
+SERVO_MAX_STEP_US = 12
+
+# Flip direction if needed
 PAN_INVERT = False
 TILT_INVERT = True
 

@@ -1,11 +1,8 @@
+# servo/controller.py
 import time
+import pigpio
 import config
 from servo.servos import Servo
-
-try:
-    import RPi.GPIO as GPIO
-except ImportError:
-    GPIO = None
 
 
 def clamp(v, vmin, vmax):
@@ -13,31 +10,34 @@ def clamp(v, vmin, vmax):
 
 
 class PanTiltController:
+    """
+    Mid-level control: error -> servo pulse width updates (pigpio).
+    """
+
     def __init__(self):
-        if GPIO is None:
-            raise RuntimeError("RPi.GPIO not available (run on Raspberry Pi).")
+        self.pi = pigpio.pi()
+        if not self.pi.connected:
+            raise RuntimeError("pigpio daemon not running (start with: sudo systemctl start pigpiod)")
 
         self.pan = Servo(
+            pi=self.pi,
             pin=config.PAN_PIN,
-            min_dc=config.PAN_MIN,
-            max_dc=config.PAN_MAX,
-            center_dc=config.PAN_CENTER,
-            freq=config.SERVO_FREQ,
+            us_min=config.PAN_US_MIN,
+            us_max=config.PAN_US_MAX,
+            us_center=config.PAN_US_CENTER,
         )
 
-        self.tilt = None
-        if config.TILT_PIN is not None:
-            self.tilt = Servo(
-                pin=config.TILT_PIN,
-                min_dc=config.TILT_MIN,
-                max_dc=config.TILT_MAX,
-                center_dc=config.TILT_CENTER,
-                freq=config.SERVO_FREQ,
-            )
+        self.tilt = Servo(
+            pi=self.pi,
+            pin=config.TILT_PIN,
+            us_min=config.TILT_US_MIN,
+            us_max=config.TILT_US_MAX,
+            us_center=config.TILT_US_CENTER,
+        )
 
         self._last_update = 0.0
 
-    def update(self, error_x, error_y):
+    def update(self, error_x: int, error_y: int):
         now = time.time()
         if now - self._last_update < config.SERVO_UPDATE_S:
             return
@@ -46,30 +46,24 @@ class PanTiltController:
         if error_x == 0 and error_y == 0:
             return
 
-        d_pan = clamp(
-            config.SERVO_KP_PAN * error_x,
-            -config.SERVO_MAX_STEP,
-            config.SERVO_MAX_STEP
-        )
-        d_tilt = clamp(
-            config.SERVO_KP_TILT * error_y,
-            -config.SERVO_MAX_STEP,
-            config.SERVO_MAX_STEP
-        )
+        # Convert pixel error -> microsecond delta (proportional)
+        d_pan = config.SERVO_KP_PAN * error_x
+        d_tilt = config.SERVO_KP_TILT * error_y
 
-        # Direction flip toggles
+        # Cap per update
+        d_pan = clamp(d_pan, -config.SERVO_MAX_STEP_US, config.SERVO_MAX_STEP_US)
+        d_tilt = clamp(d_tilt, -config.SERVO_MAX_STEP_US, config.SERVO_MAX_STEP_US)
+
         if config.PAN_INVERT:
             d_pan = -d_pan
         if config.TILT_INVERT:
             d_tilt = -d_tilt
 
-        # Apply (sign here is consistent with “move to reduce error”)
-        self.pan.set_duty(self.pan.dc - d_pan)
-        if self.tilt is not None:
-            self.tilt.set_duty(self.tilt.dc - d_tilt)
+        # Apply: subtracting generally moves toward reducing error
+        self.pan.set_us(self.pan.us - int(d_pan))
+        self.tilt.set_us(self.tilt.us - int(d_tilt))
 
     def close(self):
         self.pan.stop()
-        if self.tilt is not None:
-            self.tilt.stop()
-        GPIO.cleanup()
+        self.tilt.stop()
+        self.pi.stop()

@@ -6,11 +6,13 @@ from vision.camera import Camera
 from vision.colour_tracker import ColourTracker
 from ui.overlay import draw_crosshair, draw_tracking_overlay
 
+# Try to load servo controller only if enabled
 PanTiltController = None
 if config.USE_SERVO:
     try:
         from servo.controller import PanTiltController
-    except Exception:
+    except Exception as e:
+        print("[WARN] Servo controller failed to import:", e)
         PanTiltController = None
 
 
@@ -18,13 +20,20 @@ def _point_in_bbox(px, py, bbox):
     x, y, w, h = bbox
     return (x <= px <= x + w) and (y <= py <= y + h)
 
+
 def main():
     camera = Camera()
     tracker = ColourTracker()
 
     controller = None
     if config.USE_SERVO and PanTiltController is not None:
-        controller = PanTiltController()
+        try:
+            controller = PanTiltController()
+            print("[INFO] Servo controller started")
+        except Exception as e:
+            # If pigpiod isn't running or hardware isn't ready, vision should still work
+            print("[WARN] Servo controller failed to start:", e)
+            controller = None
 
     lock_start = None
     hold_until = 0.0
@@ -32,6 +41,8 @@ def main():
     try:
         while True:
             frame = camera.read()
+
+            # ColourTracker returns a dict result (includes mask)
             result = tracker.process(frame)
             mask = result["mask"]
 
@@ -40,7 +51,7 @@ def main():
 
             now = time.time()
 
-            # Decide if we're "locked"
+            # Decide if we're "locked" (crosshair point is inside bbox for LOCK_TIME_S)
             locked = False
             if result["found"] and result["bbox"] is not None:
                 H, W = frame.shape[:2]
