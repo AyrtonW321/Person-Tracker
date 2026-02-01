@@ -14,13 +14,32 @@ import numpy as np
 PREVIEW_SIZE = (1280, 960)
 
 # Red HSV thresholds (two ranges because red wraps hue)
-LOWER_RED1 = np.array([0, 120, 70], dtype=np.uint8)
-UPPER_RED1 = np.array([10, 255, 255], dtype=np.uint8)
-LOWER_RED2 = np.array([170, 120, 70], dtype=np.uint8)
-UPPER_RED2 = np.array([180, 255, 255], dtype=np.uint8)
+# LOWER_RED1 = np.array([0, 120, 70], dtype=np.uint8)
+# UPPER_RED1 = np.array([10, 255, 255], dtype=np.uint8)
+# LOWER_RED2 = np.array([170, 120, 70], dtype=np.uint8)
+# UPPER_RED2 = np.array([180, 255, 255], dtype=np.uint8)
+
+COLOR_RANGES = {
+    # Target red: hex #CB132B (tight range)
+    # Approx HSV(OpenCV): H~176, S~231, V~203
+    "cb132b_red": [
+        (np.array([173, 170,  60], dtype=np.uint8), 
+         np.array([179, 255, 255], dtype=np.uint8)),
+        # If you ever want slightly wider detection, you can add a 2nd range near 0,
+        # but for tight CB132B, usually this one range is enough.
+        # (np.array([  0, 170,  60], dtype=np.uint8), np.array([  2, 255, 255], dtype=np.uint8)),
+    ],
+
+    # Example placeholders for later (optional):
+    # "blue": [
+    #     (np.array([100, 150, 60], dtype=np.uint8), np.array([130, 255, 255], dtype=np.uint8)),
+    # ],
+}
+
+ACTIVE_COLORS = ["cb132b_red"]
 
 # Detection tuning
-MIN_AREA = 800
+MIN_AREA = 2000
 DEADBAND_PX = 15
 
 # Servo usage
