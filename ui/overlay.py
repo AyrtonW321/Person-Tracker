@@ -23,14 +23,19 @@ def draw_crosshair(frame_bgr, size=20, thickness=2):
 
 def draw_tracking_overlay(frame_bgr, result):
     """
-    Draws bbox + center dot if result is not None.
-    Expects result dict with keys: 'bbox' (x,y,w,h), 'cx', 'cy'
+    Draws bbox + center dot if result["found"] is True.
     """
-    if result is None:
+    if not result.get("found", False):
         return
 
-    x, y, w, h = result["bbox"]
-    cx, cy = result["cx"], result["cy"]
+    bbox = result.get("bbox")
+    center = result.get("center")
+
+    if bbox is None or center is None:
+        return
+
+    x, y, w, h = bbox
+    cx, cy = center
 
     cv.rectangle(frame_bgr, (x, y), (x + w, y + h), (0, 255, 0), 2)
     cv.circle(frame_bgr, (cx, cy), 6, (255, 0, 0), -1)
