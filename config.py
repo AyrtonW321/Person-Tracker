@@ -45,7 +45,7 @@ SERVO_KP_PAN = 0.30   # us per pixel
 SERVO_KP_TILT = 0.30  # us per pixel
 
 # Cap how much to change per update (microseconds)
-SERVO_MAX_STEP_US = 10
+SERVO_MAX_STEP_US = 6
 
 # Flip direction if needed
 PAN_INVERT = False
