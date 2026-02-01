@@ -3,7 +3,7 @@ import numpy as np
 import config
 
 
-class ColorTracker:
+class ColourTracker:
     def __init__(self, active_colors=None):
         """
         active_colors: list of color keys from config.COLOR_RANGES
