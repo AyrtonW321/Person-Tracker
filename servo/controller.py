@@ -50,7 +50,7 @@ class PanTiltController:
         """
         mag = max(abs(error_x), abs(error_y))
 
-        scale = 1.4
+        scale = 1.0
         if mag < 200:
             scale = 0.6
         if mag < 120:
