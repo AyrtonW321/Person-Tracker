@@ -4,9 +4,8 @@ import config
 
 from distance.estimator import DistanceEstimator
 from vision.camera import Camera
-from vision.colour_tracker import ColourTracker
 from ui.overlay import draw_crosshair, draw_tracking_overlay
-
+from vision.tracker import make_tracker
 
 # Try to load servo controller only if enabled
 PanTiltController = None
@@ -17,26 +16,10 @@ if config.USE_SERVO:
         print("[WARN] Servo controller failed to import:", e)
         PanTiltController = None
 
-# Loads whichever object you are trying to track
-PersonTracker = None
-FaceTracker = None
-if config.TRACK_MODE == "person":
-    from vision.person_tracker import PersonTracker
-elif config.TRACK_MODE == "face":
-    from vision.face_tracker import FaceTracker
-
 # Main function
 def main():
     # Initialize the camera
     camera = Camera()
-    
-    # Changing the tracking modes (config.py)
-    if config.TRACK_MODE == "person":
-        tracker = PersonTracker()
-    elif config.TRACK_MODE == "face":
-        tracker = FaceTracker()
-    else: 
-        tracker = ColourTracker()
 
     # Initialize the distance estimator
     dist_est = DistanceEstimator()
@@ -46,6 +29,10 @@ def main():
     if config.USE_SERVO and PanTiltController is not None:
         controller = PanTiltController()
 
+    modes = ["colour", "person", "face"]
+    mode_index = modes.index(config.TRACK_MODE) if config.TRACK_MODE in modes else 0
+    tracker = make_tracker(modes[mode_index])
+
     # The operating loop
     try:
         while True:
@@ -53,6 +40,19 @@ def main():
             frame = camera.read()
             # Outputs what the camera is looking at
             result = tracker.process(frame)
+
+            # Sees if there are any inputs from the keyboard
+            key = cv.waitKey(1) & 0xFF
+
+            if key == ord("1"):
+                mode_index = 0
+                tracker = make_tracker(modes[mode_index])
+            elif key == ord("2"):
+                mode_index = 1
+                tracker = make_tracker(modes[mode_index])
+            elif key == ord("3"):
+                mode_index = 2
+                tracker = make_tracker(modes[mode_index])
 
             # Distance from bbox width (requires calibration)
             distance_cm = None
@@ -79,8 +79,6 @@ def main():
             if mask is not None:
                 cv.imshow("Mask", mask)
 
-            # Sees if there are any inputs from the keyboard
-            key = cv.waitKey(1) & 0xFF
 
             # Turns on the distance calculator
             if key == ord("c"):

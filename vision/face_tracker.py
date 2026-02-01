@@ -20,13 +20,13 @@ class FaceTracker:
     """
 
     def __init__(self, cascade_path=None):
-        # Use OpenCV's default haarcascade path if none is provided
         if cascade_path is None:
-            cascade_path = cv.data.haarcascades + "haarcascade_frontalface_default.xml"
+            cascade_path = "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
 
         self.face_cascade = cv.CascadeClassifier(cascade_path)
         if self.face_cascade.empty():
             raise RuntimeError(f"Failed to load Haar cascade at: {cascade_path}")
+
 
         # Reuse your config tuning knobs
         self.min_area = getattr(config, "MIN_AREA", 1000)
