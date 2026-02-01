@@ -23,7 +23,6 @@ def draw_tracking_overlay(frame_bgr, result):
         return
 
     x, y, w, h = bbox
-    cx, cy = center
-
+    cx, cy = result.get("raw_center", result["center"])
     cv.rectangle(frame_bgr, (x, y), (x + w, y + h), (0, 255, 0), 2)
     cv.circle(frame_bgr, (cx, cy), 6, (255, 0, 0), -1)

@@ -86,7 +86,9 @@ class ColourTracker:
         cx = x + w // 2
         cy = y + h // 2
 
+        raw_cx, raw_cy = cx, cy
         cx, cy = self._smooth_center(cx, cy)
+
 
         error_x = cx - (W // 2)
         error_y = cy - (H // 2)
@@ -102,7 +104,9 @@ class ColourTracker:
         result.update({
             "found": True,
             "bbox": (x, y, w, h),
-            "center": (cx, cy),
+            "center": (cx, cy),          # smoothed (for servo)
+            "raw_center": (raw_cx, raw_cy),  # fast (for UI)
             "error": (error_x, error_y),
         })
+
         return result
