@@ -14,7 +14,7 @@ ACTIVE_COLORS = ["cb132b_red"]
 
 # Detection tuning
 MIN_AREA = 1000
-DEADBAND_PX = 100
+DEADBAND_PX = 20
 
 # Servo usage
 USE_SERVO = True
