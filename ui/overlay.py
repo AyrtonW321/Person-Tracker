@@ -36,3 +36,16 @@ def draw_tracking_overlay(frame_bgr, result):
     # Displays the shapes
     cv.rectangle(frame_bgr, (x, y), (x + w, y + h), (0, 255, 0), 2)
     cv.circle(frame_bgr, (cx, cy), 6, (255, 0, 0), -1)
+
+
+    dist_cm = result.get("distance_cm", None)
+    if dist_cm is not None:
+        cv.putText(
+            frame_bgr,
+            f"{dist_cm:.1f} cm",
+            (x, y + h + 25),
+            cv.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )

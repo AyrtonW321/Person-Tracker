@@ -1,6 +1,7 @@
-'''import cv2 as cv
+import cv2 as cv
 import config
 
+from vision.distance_estimator import DistanceEstimator
 from vision.camera import Camera
 from vision.colour_tracker import ColourTracker
 from ui.overlay import draw_crosshair, draw_tracking_overlay
@@ -14,31 +15,39 @@ if config.USE_SERVO:
         print("[WARN] Servo controller failed to import:", e)
         PanTiltController = None
 
+PersonTracker = None
+if config.TRACK_MODE == "person":
+    from vision.person_tracker import PersonTracker
+
 
 def main():
     camera = Camera()
-    tracker = ColourTracker()
+    
+    if config.TRACK_MODE == "person":
+        tracker = PersonTracker()
+    else:
+        tracker = ColourTracker()
+
+    dist_est = DistanceEstimator()
 
     controller = None
+    controller = None
     if config.USE_SERVO and PanTiltController is not None:
-        try:
-            controller = PanTiltController()
-            print("[INFO] Servo controller started")
-        except Exception as e:
-            print("[WARN] Servo controller failed to start:", e)
-            controller = None
+        controller = PanTiltController()
 
     try:
         while True:
             frame = camera.read()
-
-            # ColourTracker returns a dict (includes mask)
             result = tracker.process(frame)
-            if result["found"] and controller is not None:
-                print("err:", result["error"], "pan_us:", controller.pan.us, "tilt_us:", controller.tilt.us)
 
-            if result["found"]:
-                print("area:", result["area"], "error:", result["error"], "bbox:", result["bbox"])
+            # Distance from bbox width (requires calibration)
+            distance_cm = None
+            if result["found"] and result["bbox"] is not None:
+                x, y, w, h = result["bbox"]
+                distance_cm = dist_est.estimate_cm(w)
+
+            result["distance_cm"] = distance_cm
+
             mask = result["mask"]
 
             draw_crosshair(frame)
@@ -52,8 +61,24 @@ def main():
             cv.imshow("Video", frame)
             cv.imshow("Mask", mask)
 
-            if cv.waitKey(1) & 0xFF == ord("q"):
+            key = cv.waitKey(1) & 0xFF
+            
+            if key == ord("c"):
+                # Calibrate focal length using current bbox width
+                if result["found"] and result["bbox"] is not None:
+                    _, _, w, _ = result["bbox"]
+                    focal = dist_est.calibrate(w)
+                    if focal is not None:
+                        print(f"[CALIB] FOCAL_LENGTH_PX = {focal:.2f}")
+                        print("[CALIB] Put that value into config.py to persist it.")
+                    else:
+                        print("[CALIB] Invalid bbox width.")
+                else:
+                    print("[CALIB] No target detected; can't calibrate.")
+
+            elif key == ord("q"):
                 break
+
 
     finally:
         camera.close()
@@ -61,44 +86,40 @@ def main():
             controller.close()
         cv.destroyAllWindows()
 
-
 if __name__ == "__main__":
-    main() '''
+    main() 
+
+# import cv2 as cv
+# import config
+# from vision.camera import Camera
+# from vision.person_tracker import PersonTracker
+# from ui.overlay import draw_crosshair, draw_tracking_overlay
 
 
+# def main():
+#     camera = Camera()
+#     tracker = PersonTracker()
+
+#     try:
+#         while True:
+#             frame = camera.read()
+
+#             result, debug = tracker.process(frame)
+
+#             # Draw overlays on the debug frame
+#             draw_crosshair(debug)
+#             draw_tracking_overlay(debug, result)
+
+#             cv.imshow("Video", debug)
+
+#             if cv.waitKey(1) & 0xFF == ord("q"):
+#                 break
+
+#     finally:
+#         camera.close()
+#         cv.destroyAllWindows()
 
 
-import cv2 as cv
-import config
-from vision.camera import Camera
-from vision.person_tracker import PersonTracker
-from ui.overlay import draw_crosshair, draw_tracking_overlay
-
-
-def main():
-    camera = Camera()
-    tracker = PersonTracker()
-
-    try:
-        while True:
-            frame = camera.read()
-
-            result, debug = tracker.process(frame)
-
-            # Draw overlays on the debug frame
-            draw_crosshair(debug)
-            draw_tracking_overlay(debug, result)
-
-            cv.imshow("Video", debug)
-
-            if cv.waitKey(1) & 0xFF == ord("q"):
-                break
-
-    finally:
-        camera.close()
-        cv.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
