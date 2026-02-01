@@ -1,7 +1,7 @@
 import cv2 as cv
 import config
 
-from vision.distance_estimator import DistanceEstimator
+from distance.estimator import DistanceEstimator
 from vision.camera import Camera
 from vision.colour_tracker import ColourTracker
 from ui.overlay import draw_crosshair, draw_tracking_overlay
@@ -62,7 +62,7 @@ def main():
             cv.imshow("Mask", mask)
 
             key = cv.waitKey(1) & 0xFF
-            
+
             if key == ord("c"):
                 # Calibrate focal length using current bbox width
                 if result["found"] and result["bbox"] is not None:
