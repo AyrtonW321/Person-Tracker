@@ -23,7 +23,7 @@ ACTIVE_COLORS = ["cb132b_red"]
 
 # Detection tuning
 MIN_AREA = 2000
-DEADBAND_PX = 20
+DEADBAND_PX = 50
 
 # Servo usage
 USE_SERVO = True
@@ -41,12 +41,12 @@ PAN_MIN, PAN_MAX = 5.0, 9.5
 TILT_MIN, TILT_MAX = 5.0, 9.5
 
 # Servo timing: how often to apply a servo update
-SERVO_UPDATE_S = 0.03  # was 0.2 (too slow for tracking)
+SERVO_UPDATE_S = 0.04  # was 0.2 (too slow for tracking)
 
 # Servo control tuning (proportional)
 SERVO_KP_PAN = 0.0006
 SERVO_KP_TILT = 0.0006
-SERVO_MAX_STEP = 0.04
+SERVO_MAX_STEP = 0.02
 
 # If your servos move the wrong way, flip these booleans
 PAN_INVERT = False
@@ -56,4 +56,4 @@ TILT_INVERT = True
 MASK_KERNEL = (5, 5)
 OPEN_ITERS = 1
 CLOSE_ITERS = 1
-CENTER_SMOOTH_ALPHA = 0.25
+CENTER_SMOOTH_ALPHA = 0.12
