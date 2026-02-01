@@ -1,14 +1,9 @@
-'''
-stars picamera2
-capturs frames
-convert to rgb
-returns frame format for rest of the project
-'''
+# Import Libraries
 from picamera2 import Picamera2
 import cv2 as cv
 import config
 
-
+# Class for the camera
 class Camera:
     def __init__(self):
         self.picam2 = Picamera2()
