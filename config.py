@@ -21,10 +21,10 @@ UPPER_RED2 = np.array([180, 255, 255], dtype=np.uint8)
 
 # Detection tuning
 MIN_AREA = 800
-DEADBAND_PX = 10
+DEADBAND_PX = 15
 
 # Servo usage
-USE_SERVO = False  # flip True when ready
+USE_SERVO = True  # flip True when ready
 
 # Servo pins (BCM)
 PAN_PIN = 18
@@ -38,4 +38,5 @@ TILT_CENTER = 7.2
 PAN_MIN, PAN_MAX = 5.0, 9.5
 TILT_MIN, TILT_MAX = 5.0, 9.5
 
-SERVO_STEP = 0.03
+SERVO_STEP = 0.02
+SERVO_UPDATE_S = 0.03
