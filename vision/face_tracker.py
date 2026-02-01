@@ -6,12 +6,21 @@ class FaceTracker:
     def __init__(self):
         self.deadband_px = config.DEADBAND_PX
 
-        # Use OpenCV's built-in Haar cascade (no config needed)
-        cascade_path = cv.data.haarcascades + "haarcascade_frontalface_default.xml"
+        # Use OpenCV's built-in Haar cascade automatically.
+        # This avoids hardcoded /usr/share/... paths that often don't exist.
+        cascade_path = getattr(config, "FACE_CASCADE_PATH", None)
+        if not cascade_path:
+            cascade_path = cv.data.haarcascades + "haarcascade_frontalface_default.xml"
+
         self.face_cascade = cv.CascadeClassifier(cascade_path)
 
+        # If the cascade fails to load, give a useful message
         if self.face_cascade.empty():
-            raise RuntimeError("Failed to load Haar face cascade")
+            raise RuntimeError(
+                f"Failed to load Haar face cascade.\n"
+                f"Tried path: {cascade_path}\n"
+                f"Tip: install opencv-data or use cv.data.haarcascades."
+            )
 
     def process(self, frame_bgr):
         H, W = frame_bgr.shape[:2]

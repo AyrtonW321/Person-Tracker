@@ -1,7 +1,7 @@
-'''
+"""
 Docstring for distance.estimator
-estimates the distnace away from the camera
-'''
+estimates the distance away from the camera
+"""
 
 import config
 
@@ -15,7 +15,7 @@ class DistanceEstimator:
     """
 
     def __init__(self):
-        self.known_width_cm = float(getattr(config, "KNOWN_TARGET_WIDTH_CM", 5.0))
+        self.known_width_cm = float(getattr(config, "KNOWN_TARGET_WIDTH_CM", 16.0))
         self.calib_distance_cm = float(getattr(config, "CALIB_DISTANCE_CM", 50.0))
         self.focal_px = getattr(config, "FOCAL_LENGTH_PX", None)
 
