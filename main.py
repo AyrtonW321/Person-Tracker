@@ -1,4 +1,4 @@
-import cv2 as cv
+'''import cv2 as cv
 import config
 
 from vision.camera import Camera
@@ -63,4 +63,42 @@ def main():
 
 
 if __name__ == "__main__":
+    main() '''
+
+
+
+
+import cv2 as cv
+import config
+from vision.camera import Camera
+from vision.person_tracker import PersonTracker
+from ui.overlay import draw_crosshair, draw_tracking_overlay
+
+
+def main():
+    camera = Camera()
+    tracker = PersonTracker()
+
+    try:
+        while True:
+            frame = camera.read()
+
+            result, debug = tracker.process(frame)
+
+            # Draw overlays on the debug frame
+            draw_crosshair(debug)
+            draw_tracking_overlay(debug, result)
+
+            cv.imshow("Video", debug)
+
+            if cv.waitKey(1) & 0xFF == ord("q"):
+                break
+
+    finally:
+        camera.close()
+        cv.destroyAllWindows()
+
+
+if __name__ == "__main__":
     main()
+
