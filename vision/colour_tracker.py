@@ -72,7 +72,7 @@ class ColourTracker:
         # Reduce noise before HSV thresholding
         frame_bgr = cv.GaussianBlur(frame_bgr, (5, 5), 0)
 
-        # Convert BGR -> HSV for colour thresholding
+        # Convert BGR ->  HSV for colour thresholding
         hsv = cv.cvtColor(frame_bgr, cv.COLOR_BGR2HSV)
 
         # Build and clean the mask
@@ -88,11 +88,13 @@ class ColourTracker:
             "found": False,
             "bbox": None,
             "center": None,
-            "raw_center": None,   # optional, overlay can use it
+            "raw_center": None,
             "error": None,
             "area": 0,
-            "mask": mask,         # always provide mask for colour mode
-            "distance_cm": None,  # main will compute this if needed
+            "mask": mask,          # colour mode always has a mask
+            "distance_cm": None,   # main fills this
+            "label": "colour",
+            "weight": 1.0,         # no "confidence", so just use 1.0 when found
         }
 
         # Nothing detected → reset smoothing + return
@@ -138,10 +140,13 @@ class ColourTracker:
 
         result.update({
             "found": True,
-            "bbox": (x, y, w, h),
-            "center": (cx, cy),
-            "raw_center": (raw_cx, raw_cy),
-            "error": (error_x, error_y),
+            "bbox": (int(x), int(y), int(w), int(h)),
+            "center": (int(cx), int(cy)),          # smoothed center (servo)
+            "raw_center": (int(raw_cx), int(raw_cy)),  # raw center (UI)
+            "error": (int(error_x), int(error_y)),
+            "area": int(area),
+            "label": "colour",
+            "weight": 1.0,
         })
 
         return result

@@ -39,10 +39,13 @@ def main():
                 "found": False,
                 "bbox": None,
                 "center": None,
+                "raw_center": None,
                 "error": None,
                 "area": 0,
                 "mask": None,
                 "distance_cm": None,
+                "label": "idle",
+                "weight": 0.0,
             }
 
             # Only process tracking if a tracker is active

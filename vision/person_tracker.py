@@ -34,11 +34,13 @@ class PersonTracker:
             "found": False,
             "bbox": None,
             "center": None,
+            "raw_center": None,
             "error": None,
             "area": 0,
+            "mask": None,          # usually no mask for person
+            "distance_cm": None,
             "label": "person",
             "weight": 0.0,
-            "mask": None,   # keep key for compatibility (not used for HOG)
         }
 
         # Optional resize for faster detection
@@ -102,16 +104,17 @@ class PersonTracker:
         if abs(error_y) < self.deadband_px:
             error_y = 0
 
-        # Update standardized result
         result.update({
             "found": True,
             "bbox": (int(x), int(y), int(w), int(h)),
             "center": (int(cx), int(cy)),
+            "raw_center": (int(cx), int(cy)),      # person tracker typically has no separate raw
             "error": (int(error_x), int(error_y)),
             "area": int(area),
-            "weight": float(weight),
             "label": "person",
+            "weight": float(weight),               # confidence if you have it
         })
+
 
         # Draw debug overlay
         cv.rectangle(debug, (x, y), (x + w, y + h), (0, 255, 0), 2)

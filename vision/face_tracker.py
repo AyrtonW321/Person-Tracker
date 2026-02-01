@@ -74,8 +74,12 @@ class FaceTracker:
             "raw_center": None,
             "error": None,
             "area": 0,
-            "mask": mask,
+            "mask": mask,          # if you build a face mask; else None
+            "distance_cm": None,
+            "label": "face",
+            "weight": 1.0,
         }
+
 
         if len(faces) == 0:
             self._smoothed_center = None
@@ -123,10 +127,11 @@ class FaceTracker:
         result.update({
             "found": True,
             "bbox": (int(x), int(y), int(w), int(h)),
-            "center": (cx, cy),
-            "raw_center": (raw_cx, raw_cy),
-            "error": (error_x, error_y),
-            "mask": mask,
+            "center": (int(cx), int(cy)),
+            "raw_center": (int(cx), int(cy)),
+            "error": (int(error_x), int(error_y)),
+            "area": int(w * h),
+            "label": "face",
+            "weight": 1.0,
         })
-
         return result
