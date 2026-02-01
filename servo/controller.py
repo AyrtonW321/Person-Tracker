@@ -52,16 +52,15 @@ class PanTiltController:
 
         # Start fast when far
         scale = 1.2
-        if mag < 200:
-            scale = 0.9
-        if mag < 120:
-            scale = 0.7
-        if mag < 60:
-            scale = 0.55
-
-        # Never allow too-small step cap
-        return max(10, config.SERVO_MAX_STEP_US * scale)
-
+        if mag > 250:
+            scale = 1.6   # was 1.4
+        elif mag > 150:
+            scale = 1.2   # was 1.0
+        elif mag > 80:
+            scale = 0.7   # was 0.6
+        else:
+            scale = 0.40  # was 0.35
+        return max(4, config.SERVO_MAX_STEP_US * scale)
 
     def update(self, error_x: int, error_y: int):
         now = time.time()
