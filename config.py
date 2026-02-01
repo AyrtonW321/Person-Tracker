@@ -37,15 +37,15 @@ TILT_US_MAX = 2400
 TILT_US_CENTER = 1500
 
 # How often to apply a servo update (seconds)
-SERVO_UPDATE_S = 0.03
+SERVO_UPDATE_S = 0.02
 
 # Proportional tuning: converts pixel error -> microseconds change
 # Bigger KP => more movement for the same error.
-SERVO_KP_PAN = 0.6   # us per pixel
-SERVO_KP_TILT = 0.6  # us per pixel
+SERVO_KP_PAN = 0.25   # us per pixel
+SERVO_KP_TILT = 0.25  # us per pixel
 
 # Cap how much to change per update (microseconds)
-SERVO_MAX_STEP_US = 8
+SERVO_MAX_STEP_US = 4
 
 # Flip direction if needed
 PAN_INVERT = False
@@ -56,5 +56,4 @@ MASK_KERNEL = (10, 10)
 OPEN_ITERS = 1
 CLOSE_ITERS = 1
 CENTER_SMOOTH_ALPHA = 0.35
-
 ERROR_SMOOTH_ALPHA = 0.12
