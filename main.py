@@ -34,6 +34,8 @@ def main():
 
             # ColourTracker returns a dict (includes mask)
             result = tracker.process(frame)
+            if result["found"]:
+                print("area:", result["area"], "error:", result["error"], "bbox:", result["bbox"])
             mask = result["mask"]
 
             draw_crosshair(frame)
