@@ -7,7 +7,6 @@ from vision.camera import Camera
 from ui.overlay import draw_crosshair, draw_tracking_overlay
 from vision.tracker import make_tracker
 
-# Try to load servo controller only if enabled
 PanTiltController = None
 if config.USE_SERVO:
     try:
@@ -20,8 +19,8 @@ def main():
     camera = Camera()
     dist_est = DistanceEstimator()
 
-    # Tracker is selected ONCE from config
-    tracker = make_tracker(getattr(config, "TRACK_MODE", "colour"))
+    # Choose tracker from config (single mode)
+    tracker = make_tracker(config.TRACK_MODE)
 
     controller = None
     if config.USE_SERVO and PanTiltController is not None:
@@ -33,11 +32,9 @@ def main():
     try:
         while True:
             frame = camera.read()
+            result = tracker.process(frame)  # must return dict
 
-            # Always get a dict result from the tracker
-            result = tracker.process(frame)
-
-            # Distance from bbox width (always, when found)
+            # Distance from bbox width
             result["distance_cm"] = None
             bbox = result.get("bbox")
             if result.get("found") and isinstance(bbox, (tuple, list)) and len(bbox) == 4:
@@ -49,18 +46,21 @@ def main():
                 error_x, error_y = result["error"]
                 controller.update(error_x, error_y)
 
-            # Draw overlays + display
+            # Overlays
             draw_crosshair(frame)
             draw_tracking_overlay(frame, result)
 
+            # Display
             cv.imshow("Video", frame)
-            if result.get("mask") is not None:
-                cv.imshow("Mask", result["mask"])
+            mask = result.get("mask")
+            if mask is not None:
+                cv.imshow("Mask", mask)
 
-            # Keys: calibrate + quit only
             key = cv.waitKey(1) & 0xFF
 
+            # Calibrate focal length using current bbox width
             if key == ord("c"):
+                bbox = result.get("bbox")
                 if result.get("found") and isinstance(bbox, (tuple, list)) and len(bbox) == 4:
                     w = int(bbox[2])
                     dist_est.calibrate(w)

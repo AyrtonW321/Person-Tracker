@@ -21,7 +21,7 @@ MIN_AREA = 1000 # Minimum area(px) of an object for detection
 DEADBAND_PX = 0  # The error from the crosshair to the centre of the object
 
 # Servo usage
-USE_SERVO = False
+USE_SERVO = True
 TRACK_MODE = "face" # "person" | "colour" | "face"
 
 # Servo pins
@@ -71,3 +71,6 @@ CALIB_DISTANCE_CM = 50.0         # Calibration distance measurement
 FOCAL_LENGTH_PX = None           # Will be computed when you press "c"
 
 DIST_SMOOTH_ALPHA = 0.25         # 0.15-0.35 good range (higher = more responsive)
+
+FACE_CASCADE_PATH = "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
+
