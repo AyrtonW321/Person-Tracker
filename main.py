@@ -31,6 +31,9 @@ def main():
 
     tracker = None
 
+    # Distance measurement toggle (OFF by default)
+    distance_enabled = False
+
     try:
         while True:
             frame = camera.read()
@@ -52,10 +55,12 @@ def main():
             if tracker is not None:
                 result = tracker.process(frame)
 
-                # Distance from bbox width
-                if result.get("found") and result.get("bbox") is not None:
-                    _, _, w, _ = result["bbox"]
-                    result["distance_cm"] = dist_est.estimate_cm(w)
+                # Distance from bbox width ONLY if enabled
+                if distance_enabled and result.get("found") and result.get("bbox") is not None:
+                    bbox = result["bbox"]
+                    if isinstance(bbox, (tuple, list)) and len(bbox) == 4:
+                        w = int(bbox[2])
+                        result["distance_cm"] = dist_est.estimate_cm(w)
 
                 # Servo control
                 if controller is not None and result.get("found") and result.get("error"):
@@ -91,11 +96,16 @@ def main():
                 tracker = make_tracker("face")
                 print("[MODE] Face tracking")
 
+            # Toggle distance measurement
+            elif key == ord("d"):
+                distance_enabled = not distance_enabled
+                print(f"[DIST] {'ON' if distance_enabled else 'OFF'}")
+
             # Calibration
             elif key == ord("c"):
                 if result.get("found") and result.get("bbox") is not None:
                     _, _, w, _ = result["bbox"]
-                    focal = dist_est.calibrate(w)
+                    focal = dist_est.calibrate(int(w))
                     if focal is not None:
                         print(f"[CALIB] FOCAL_LENGTH_PX = {focal:.2f}")
                         print("[CALIB] Put that value into config.py to persist it.")
