@@ -2,24 +2,35 @@ import cv2 as cv
 import numpy as np
 import config
 
+# Class for colour tracking
 class ColourTracker:
     def __init__(self, active_colors=None):
+        #Colour to track
         self.active_colors = active_colors or config.ACTIVE_COLORS
+        # Colour range to track
         self.color_ranges = config.COLOR_RANGES
+        # Minimum area of object needed for tracking
         self.min_area = config.MIN_AREA
+        # Smoothing factor for servo error signal
         self.error_alpha = config.ERROR_SMOOTH_ALPHA
-        self._smoothed_error = None  # (ex, ey)
+        #Internal state for exponentially-smoothed error
+        self._smoothed_error = None 
+        # Pixel radius around screen center where error is 
         self.deadband_px = config.DEADBAND_PX
-
+        # Kernel used to clean up the binary mask 
         self.kernel = cv.getStructuringElement(
             cv.MORPH_ELLIPSE,
             config.MASK_KERNEL
         )
-
+        # Smoothing factor for detected center
         self.alpha = config.CENTER_SMOOTH_ALPHA
+        # Internal state for smoothed center
         self._smoothed_center = None  # (sx, sy)
 
+    # Applies moving average to the error signal
+    # Reduces servo jitter caused by frame to frame noise
     def _smooth_error(self, ex, ey):
+        #Initialize smoothing on first valid detection of object
         if self._smoothed_error is None:
             self._smoothed_error = (float(ex), float(ey))
         else:
@@ -29,6 +40,8 @@ class ColourTracker:
             self._smoothed_error = (sx, sy)
         return int(self._smoothed_error[0]), int(self._smoothed_error[1])
 
+    #  Builds a combined mask for all active colours
+    # Detected multiple ranges for colours
     def _build_mask(self, hsv):
         mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
         for color_name in self.active_colors:
@@ -36,6 +49,8 @@ class ColourTracker:
                 mask = cv.bitwise_or(mask, cv.inRange(hsv, lower, upper))
         return mask
 
+    # Applies smoothing to the detected center point
+    # Makes the over lay more stable
     def _smooth_center(self, cx, cy):
         if self._smoothed_center is None:
             self._smoothed_center = (float(cx), float(cy))
@@ -46,19 +61,27 @@ class ColourTracker:
             self._smoothed_center = (sx, sy)
         return int(self._smoothed_center[0]), int(self._smoothed_center[1])
 
+    # Presses the frame and returns a result dictionary
     def process(self, frame_bgr):
+        # Frame dimensions
         H, W = frame_bgr.shape[:2]
 
+        # Add blur to reduce noise
         frame_bgr = cv.GaussianBlur(frame_bgr, (5, 5), 0)
+        # Convert BGR image to HSV colour space
         hsv = cv.cvtColor(frame_bgr, cv.COLOR_BGR2HSV)
 
+        # Build the mask using hsv
         mask = self._build_mask(hsv)
-
+        # Removes small noise around the screens
         mask = cv.morphologyEx(mask, cv.MORPH_OPEN, self.kernel, iterations=config.OPEN_ITERS)
+        # Fills the small holes in the object
         mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, self.kernel, iterations=config.CLOSE_ITERS)
 
+        # Finds the contours of the detected object region
         contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
+        
+        # Default result if no object is in frame
         result = {
             "found": False,
             "bbox": None,
@@ -68,6 +91,7 @@ class ColourTracker:
             "mask": mask,
         }
 
+        
         if not contours:
             self._smoothed_center = None
             self._smoothed_error = None

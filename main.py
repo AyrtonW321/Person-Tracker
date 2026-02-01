@@ -7,6 +7,7 @@ from vision.camera import Camera
 from vision.colour_tracker import ColourTracker
 from ui.overlay import draw_crosshair, draw_tracking_overlay
 
+
 # Try to load servo controller only if enabled
 PanTiltController = None
 if config.USE_SERVO:
@@ -18,8 +19,11 @@ if config.USE_SERVO:
 
 # Loads whichever object you are trying to track
 PersonTracker = None
+FaceTracker = None
 if config.TRACK_MODE == "person":
     from vision.person_tracker import PersonTracker
+elif config.TRACK_MODE == "face":
+    from vision.face_tracker import FaceTracker
 
 # Main function
 def main():
@@ -29,7 +33,9 @@ def main():
     # Changing the tracking modes (config.py)
     if config.TRACK_MODE == "person":
         tracker = PersonTracker()
-    else:
+    elif config.TRACK_MODE == "face":
+        tracker = FaceTracker()
+    else: 
         tracker = ColourTracker()
 
     # Initialize the distance estimator
@@ -50,27 +56,28 @@ def main():
 
             # Distance from bbox width (requires calibration)
             distance_cm = None
-            if result["found"] and result["bbox"] is not None:
+            if result.get("found") and result.get("bbox") is not None:
                 x, y, w, h = result["bbox"]
                 distance_cm = dist_est.estimate_cm(w)
 
             result["distance_cm"] = distance_cm
 
             # Camera mask
-            mask = result["mask"]
+            mask = result.get("mask", None)
 
             # Draw the crosshair and the tracking overlay
             draw_crosshair(frame)
             draw_tracking_overlay(frame, result)
 
             # Direct servo control
-            if controller is not None and result["found"]:
+            if controller is not None and result.get("found"):
                 error_x, error_y = result["error"]
                 controller.update(error_x, error_y)
 
             # Display the video and the mask
             cv.imshow("Video", frame)
-            cv.imshow("Mask", mask)
+            if mask is not None:
+                cv.imshow("Mask", mask)
 
             # Sees if there are any inputs from the keyboard
             key = cv.waitKey(1) & 0xFF
@@ -78,7 +85,7 @@ def main():
             # Turns on the distance calculator
             if key == ord("c"):
                 # Calibrate focal length using current bbox width
-                if result["found"] and result["bbox"] is not None:
+                if result.get("found") and result.get("bbox") is not None:
                     _, _, w, _ = result["bbox"]
                     focal = dist_est.calibrate(w)
                     if focal is not None:
@@ -106,38 +113,3 @@ def main():
 # Run the main function
 if __name__ == "__main__":
     main() 
-
-# import cv2 as cv
-# import config
-# from vision.camera import Camera
-# from vision.person_tracker import PersonTracker
-# from ui.overlay import draw_crosshair, draw_tracking_overlay
-
-
-# def main():
-#     camera = Camera()
-#     tracker = PersonTracker()
-
-#     try:
-#         while True:
-#             frame = camera.read()
-
-#             result, debug = tracker.process(frame)
-
-#             # Draw overlays on the debug frame
-#             draw_crosshair(debug)
-#             draw_tracking_overlay(debug, result)
-
-#             cv.imshow("Video", debug)
-
-#             if cv.waitKey(1) & 0xFF == ord("q"):
-#                 break
-
-#     finally:
-#         camera.close()
-#         cv.destroyAllWindows()
-
-
-# if __name__ == "__main__":
-#     main()
-

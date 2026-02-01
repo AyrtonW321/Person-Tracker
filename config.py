@@ -21,9 +21,9 @@ MIN_AREA = 1000 # Minimum area(px) of an object for detection
 DEADBAND_PX = 0  # The error from the crosshair to the centre of the object
 
 # Servo usage
-USE_SERVO = True
+USE_SERVO = False
 # Tracking mode
-TRACK_MODE = "colour"
+TRACK_MODE = "face"
 
 # Servo pins
 PAN_PIN = 18
