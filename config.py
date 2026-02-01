@@ -41,7 +41,7 @@ PAN_MIN, PAN_MAX = 5.0, 9.5
 TILT_MIN, TILT_MAX = 5.0, 9.5
 
 # Servo timing: how often to apply a servo update
-SERVO_UPDATE_S = 0.04  # was 0.2 (too slow for tracking)
+SERVO_UPDATE_S = 0.9  # was 0.2 (too slow for tracking)
 
 # Servo control tuning (proportional)
 SERVO_KP_PAN = 0.0006
