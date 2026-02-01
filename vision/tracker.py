@@ -1,5 +1,7 @@
 import config
 from vision.colour_tracker import ColourTracker
+from vision.person_tracker import PersonTracker
+from vision.face_tracker import FaceTracker
 
 
 def make_tracker(mode: str):
@@ -9,11 +11,9 @@ def make_tracker(mode: str):
         return ColourTracker()
 
     if mode == "person":
-        from vision.person_tracker import PersonTracker
         return PersonTracker()
 
     if mode == "face":
-        from vision.face_tracker import FaceTracker
         return FaceTracker()
 
     raise ValueError(f"Unknown TRACK_MODE: {mode}")

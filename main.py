@@ -16,6 +16,7 @@ if config.USE_SERVO:
         print("[WARN] Servo controller failed to import:", e)
         PanTiltController = None
 
+
 def main():
     camera = Camera()
     dist_est = DistanceEstimator()
@@ -28,52 +29,66 @@ def main():
             print("[WARN] Servo controller failed to start:", e)
             controller = None
 
-    modes = ["colour", "person", "face"]
-    mode_index = modes.index(config.TRACK_MODE) if config.TRACK_MODE in modes else 0
-    tracker = make_tracker(modes[mode_index])
+    tracker = None
 
     try:
         while True:
             frame = camera.read()
-            result = tracker.process(frame)
 
-            # Distance from bbox width (requires calibration)
-            distance_cm = None
-            if result.get("found") and result.get("bbox") is not None:
-                _, _, w, _ = result["bbox"]
-                distance_cm = dist_est.estimate_cm(w)
-            result["distance_cm"] = distance_cm
+            result = {
+                "found": False,
+                "bbox": None,
+                "center": None,
+                "error": None,
+                "area": 0,
+                "mask": None,
+                "distance_cm": None,
+            }
+
+            # Only process tracking if a tracker is active
+            if tracker is not None:
+                result = tracker.process(frame)
+
+                # Distance from bbox width
+                if result.get("found") and result.get("bbox") is not None:
+                    _, _, w, _ = result["bbox"]
+                    result["distance_cm"] = dist_est.estimate_cm(w)
+
+                # Servo control
+                if controller is not None and result.get("found") and result.get("error"):
+                    error_x, error_y = result["error"]
+                    controller.update(error_x, error_y)
 
             # Draw overlays
             draw_crosshair(frame)
             draw_tracking_overlay(frame, result)
 
-            # Servo control
-            if controller is not None and result.get("found") and result.get("error") is not None:
-                error_x, error_y = result["error"]
-                controller.update(error_x, error_y)
-
             # Display
             cv.imshow("Video", frame)
-            mask = result.get("mask")
-            if mask is not None:
-                cv.imshow("Mask", mask)
+            if result.get("mask") is not None:
+                cv.imshow("Mask", result["mask"])
 
-            # Keyboard input (handle AFTER showing frames so UI stays responsive)
+            # Keyboard input
             key = cv.waitKey(1) & 0xFF
 
-            # Mode switching
-            if key == ord("1"):
-                mode_index = 0
-                tracker = make_tracker(modes[mode_index])
-            elif key == ord("2"):
-                mode_index = 1
-                tracker = make_tracker(modes[mode_index])
-            elif key == ord("3"):
-                mode_index = 2
-                tracker = make_tracker(modes[mode_index])
+            # ----- MODE CONTROL -----
+            if key == ord("0"):
+                tracker = None
+                print("[MODE] Idle (no tracking)")
 
-            # Calibration (press 'c')
+            elif key == ord("1"):
+                tracker = make_tracker("colour")
+                print("[MODE] Colour tracking")
+
+            elif key == ord("2"):
+                tracker = make_tracker("person")
+                print("[MODE] Person tracking")
+
+            elif key == ord("3"):
+                tracker = make_tracker("face")
+                print("[MODE] Face tracking")
+
+            # Calibration
             elif key == ord("c"):
                 if result.get("found") and result.get("bbox") is not None:
                     _, _, w, _ = result["bbox"]

@@ -22,8 +22,6 @@ DEADBAND_PX = 0  # The error from the crosshair to the centre of the object
 
 # Servo usage
 USE_SERVO = False
-# Tracking mode
-TRACK_MODE = "colour"
 
 # Servo pins
 PAN_PIN = 18
