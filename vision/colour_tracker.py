@@ -7,6 +7,8 @@ class ColourTracker:
         self.active_colors = active_colors or config.ACTIVE_COLORS
         self.color_ranges = config.COLOR_RANGES
         self.min_area = config.MIN_AREA
+        self.error_alpha = config.ERROR_SMOOTH_ALPHA
+        self._smoothed_error = None  # (ex, ey)
         self.deadband_px = config.DEADBAND_PX
 
         self.kernel = cv.getStructuringElement(
@@ -16,6 +18,16 @@ class ColourTracker:
 
         self.alpha = config.CENTER_SMOOTH_ALPHA
         self._smoothed_center = None  # (sx, sy)
+
+    def _smooth_error(self, ex, ey):
+        if self._smoothed_error is None:
+            self._smoothed_error = (float(ex), float(ey))
+        else:
+            sx, sy = self._smoothed_error
+            sx = (1 - self.error_alpha) * sx + self.error_alpha * ex
+            sy = (1 - self.error_alpha) * sy + self.error_alpha * ey
+            self._smoothed_error = (sx, sy)
+        return int(self._smoothed_error[0]), int(self._smoothed_error[1])
 
     def _build_mask(self, hsv):
         mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
@@ -58,6 +70,7 @@ class ColourTracker:
 
         if not contours:
             self._smoothed_center = None
+            self._smoothed_error = None
             return result
 
         c = max(contours, key=cv.contourArea)
@@ -66,6 +79,7 @@ class ColourTracker:
 
         if area < self.min_area:
             self._smoothed_center = None
+            self._smoothed_error = None
             return result
 
         x, y, w, h = cv.boundingRect(c)
@@ -77,6 +91,9 @@ class ColourTracker:
         error_x = cx - (W // 2)
         error_y = cy - (H // 2)
 
+        error_x, error_y = self._smooth_error(error_x, error_y)
+
+        # Deadband (keep this AFTER smoothing)
         if abs(error_x) < self.deadband_px:
             error_x = 0
         if abs(error_y) < self.deadband_px:
