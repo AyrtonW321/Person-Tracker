@@ -1,26 +1,29 @@
 # vision/face_tracker.py
 import cv2 as cv
-import numpy as np
 import config
 
 class FaceTracker:
     def __init__(self):
         self.deadband_px = config.DEADBAND_PX
 
-        # You must set this path in config or replace with your actual path
-        cascade_path = getattr(config, "FACE_CASCADE_PATH", None)
-        if cascade_path is None:
-            raise RuntimeError("FACE_CASCADE_PATH not set in config.py")
-
+        # Use OpenCV's built-in Haar cascade (no config needed)
+        cascade_path = cv.data.haarcascades + "haarcascade_frontalface_default.xml"
         self.face_cascade = cv.CascadeClassifier(cascade_path)
+
+        if self.face_cascade.empty():
+            raise RuntimeError("Failed to load Haar face cascade")
 
     def process(self, frame_bgr):
         H, W = frame_bgr.shape[:2]
 
         gray = cv.cvtColor(frame_bgr, cv.COLOR_BGR2GRAY)
-        faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
-        mask = None
+        faces = self.face_cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(30, 30),
+        )
 
         result = {
             "found": False,
@@ -29,13 +32,15 @@ class FaceTracker:
             "raw_center": None,
             "error": None,
             "area": 0,
-            "mask": mask,
+            "mask": None,
         }
 
         if len(faces) == 0:
             return result
 
+        # Choose largest detected face
         x, y, w, h = max(faces, key=lambda r: r[2] * r[3])
+
         cx = x + w // 2
         cy = y + h // 2
 
@@ -55,4 +60,5 @@ class FaceTracker:
             "error": (int(error_x), int(error_y)),
             "area": int(w * h),
         })
+
         return result
