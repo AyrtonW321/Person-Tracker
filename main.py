@@ -34,6 +34,9 @@ def main():
 
             # ColourTracker returns a dict (includes mask)
             result = tracker.process(frame)
+            if result["found"] and controller is not None:
+                print("err:", result["error"], "pan_us:", controller.pan.us, "tilt_us:", controller.tilt.us)
+
             if result["found"]:
                 print("area:", result["area"], "error:", result["error"], "bbox:", result["bbox"])
             mask = result["mask"]

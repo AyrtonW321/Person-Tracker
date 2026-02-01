@@ -43,22 +43,25 @@ class PanTiltController:
         )
 
         self._last_update = 0.0
+        self._pan_acc = 0.0
+        self._tilt_acc = 0.0
+
 
     def _scaled_max_step(self, error_x: int, error_y: int) -> float:
-        """
-        Scale step size down as we get closer to center to reduce overshoot.
-        """
         mag = max(abs(error_x), abs(error_y))
 
-        scale = 1.0
+        # Start fast when far
+        scale = 1.2
         if mag < 200:
-            scale = 0.6
+            scale = 0.9
         if mag < 120:
-            scale = 0.35
+            scale = 0.7
         if mag < 60:
-            scale = 0.18
+            scale = 0.55
 
-        return config.SERVO_MAX_STEP_US * scale
+        # Never allow too-small step cap
+        return max(10, config.SERVO_MAX_STEP_US * scale)
+
 
     def update(self, error_x: int, error_y: int):
         now = time.time()
@@ -85,8 +88,19 @@ class PanTiltController:
             d_tilt = -d_tilt
 
         # Apply: subtracting generally moves toward reducing error
-        self.pan.set_us(self.pan.us - int(d_pan))
-        self.tilt.set_us(self.tilt.us - int(d_tilt))
+        # Accumulate fractional deltas so tiny movements still happen
+        self._pan_acc += d_pan
+        self._tilt_acc += d_tilt
+
+        step_pan = int(round(self._pan_acc))
+        step_tilt = int(round(self._tilt_acc))
+
+        self._pan_acc -= step_pan
+        self._tilt_acc -= step_tilt
+
+        self.pan.set_us(self.pan.us - step_pan)
+        self.tilt.set_us(self.tilt.us - step_tilt)
+
 
     def close(self):
         self.pan.stop()
