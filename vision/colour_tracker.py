@@ -5,32 +5,38 @@ import config
 # Class for colour tracking
 class ColourTracker:
     def __init__(self, active_colors=None):
-        #Colour to track
+        # Colour(s) to track (keys in config.COLOR_RANGES)
         self.active_colors = active_colors or config.ACTIVE_COLORS
-        # Colour range to track
+
+        # Dict: color_name -> list of (lower, upper) HSV ranges
         self.color_ranges = config.COLOR_RANGES
-        # Minimum area of object needed for tracking
+
+        # Minimum area (pixels) required to accept a detection
         self.min_area = config.MIN_AREA
+
         # Smoothing factor for servo error signal
         self.error_alpha = config.ERROR_SMOOTH_ALPHA
-        #Internal state for exponentially-smoothed error
-        self._smoothed_error = None 
-        # Pixel radius around screen center where error is 
+
+        # Internal state for exponentially-smoothed error
+        self._smoothed_error = None  # (ex, ey)
+
+        # Deadband (pixels) around center where error becomes 0
         self.deadband_px = config.DEADBAND_PX
-        # Kernel used to clean up the binary mask 
+
+        # Kernel used to clean up the binary mask
         self.kernel = cv.getStructuringElement(
             cv.MORPH_ELLIPSE,
             config.MASK_KERNEL
         )
-        # Smoothing factor for detected center
+
+        # Smoothing factor for detected center (UI stability)
         self.alpha = config.CENTER_SMOOTH_ALPHA
+
         # Internal state for smoothed center
         self._smoothed_center = None  # (sx, sy)
 
-    # Applies moving average to the error signal
-    # Reduces servo jitter caused by frame to frame noise
+    # Applies moving average to the error signal (reduces servo jitter)
     def _smooth_error(self, ex, ey):
-        #Initialize smoothing on first valid detection of object
         if self._smoothed_error is None:
             self._smoothed_error = (float(ex), float(ey))
         else:
@@ -40,8 +46,7 @@ class ColourTracker:
             self._smoothed_error = (sx, sy)
         return int(self._smoothed_error[0]), int(self._smoothed_error[1])
 
-    #  Builds a combined mask for all active colours
-    # Detected multiple ranges for colours
+    # Builds a combined mask for all active colours
     def _build_mask(self, hsv):
         mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
         for color_name in self.active_colors:
@@ -49,8 +54,7 @@ class ColourTracker:
                 mask = cv.bitwise_or(mask, cv.inRange(hsv, lower, upper))
         return mask
 
-    # Applies smoothing to the detected center point
-    # Makes the over lay more stable
+    # Applies smoothing to the detected center point (UI stability)
     def _smooth_center(self, cx, cy):
         if self._smoothed_center is None:
             self._smoothed_center = (float(cx), float(cy))
@@ -61,65 +65,72 @@ class ColourTracker:
             self._smoothed_center = (sx, sy)
         return int(self._smoothed_center[0]), int(self._smoothed_center[1])
 
-    # Presses the frame and returns a result dictionary
+    # Processes a frame and returns a result dictionary (same key set as main.py expects)
     def process(self, frame_bgr):
-        # Frame dimensions
         H, W = frame_bgr.shape[:2]
 
-        # Add blur to reduce noise
+        # Reduce noise before HSV thresholding
         frame_bgr = cv.GaussianBlur(frame_bgr, (5, 5), 0)
-        # Convert BGR image to HSV colour space
+
+        # Convert BGR -> HSV for colour thresholding
         hsv = cv.cvtColor(frame_bgr, cv.COLOR_BGR2HSV)
 
-        # Build the mask using hsv
+        # Build and clean the mask
         mask = self._build_mask(hsv)
-        # Removes small noise around the screens
         mask = cv.morphologyEx(mask, cv.MORPH_OPEN, self.kernel, iterations=config.OPEN_ITERS)
-        # Fills the small holes in the object
         mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, self.kernel, iterations=config.CLOSE_ITERS)
 
-        # Finds the contours of the detected object region
+        # Find contours (blobs)
         contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        
-        # Default result if no object is in frame
+
+        # Default result if no valid object is found
         result = {
             "found": False,
             "bbox": None,
             "center": None,
+            "raw_center": None,   # optional, overlay can use it
             "error": None,
             "area": 0,
-            "mask": mask,
+            "mask": mask,         # always provide mask for colour mode
+            "distance_cm": None,  # main will compute this if needed
         }
 
-        
+        # Nothing detected → reset smoothing + return
         if not contours:
             self._smoothed_center = None
             self._smoothed_error = None
             return result
 
+        # Largest contour = main target
         c = max(contours, key=cv.contourArea)
         area = cv.contourArea(c)
         result["area"] = int(area)
 
+        # Too small → ignore + reset smoothing
         if area < self.min_area:
             self._smoothed_center = None
             self._smoothed_error = None
             return result
 
+        # Bounding box + center
         x, y, w, h = cv.boundingRect(c)
         cx = x + w // 2
         cy = y + h // 2
 
+        # Raw center for fast UI dot
         raw_cx, raw_cy = cx, cy
+
+        # Smoothed center for servo error calculation
         cx, cy = self._smooth_center(cx, cy)
 
-
+        # Error from frame center
         error_x = cx - (W // 2)
         error_y = cy - (H // 2)
 
+        # Smooth error for stable servo motion
         error_x, error_y = self._smooth_error(error_x, error_y)
 
-        # Deadband (keep this AFTER smoothing)
+        # Deadband (after smoothing)
         if abs(error_x) < self.deadband_px:
             error_x = 0
         if abs(error_y) < self.deadband_px:
@@ -128,8 +139,8 @@ class ColourTracker:
         result.update({
             "found": True,
             "bbox": (x, y, w, h),
-            "center": (cx, cy),          # smoothed (for servo)
-            "raw_center": (raw_cx, raw_cy),  # fast (for UI)
+            "center": (cx, cy),
+            "raw_center": (raw_cx, raw_cy),
             "error": (error_x, error_y),
         })
 
